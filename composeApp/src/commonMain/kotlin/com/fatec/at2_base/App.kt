@@ -1,6 +1,6 @@
 package com.fatec.at2_base
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,157 +13,188 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fatec.at2_base.model.Roupa
+import com.fatec.at2_base.model.Filme
 import kotlinx.coroutines.launch
 
-// ── Navegação simples ─────────────────────────────────────────────────────────
-enum class Tela { LISTA, ADICIONAR }
-
-// ── Cores ─────────────────────────────────────────────────────────────────────
-private val Borda = Color(0xFFE5E7EB)
-private val Secundario = Color(0xFF6B7280)
+private val Azul = Color(0xFF1E3A8A)
+private val Fundo = Color(0xFFF3F4F6)
+private val Cinza = Color(0xFF6B7280)
 
 @Composable
 fun App() {
-    MaterialTheme {
-        var telaAtual by remember { mutableStateOf(Tela.LISTA) }
-        var roupas by remember { mutableStateOf<List<Roupa>>(emptyList()) }
-        var carregando by remember { mutableStateOf(true) }
-        var erro by remember { mutableStateOf<String?>(null) }
-        val scope = rememberCoroutineScope()
 
-        fun atualizar() {
-            scope.launch {
-                carregando = true; erro = null
-                try { roupas = ApiClient.getRoupas() }
-                catch (e: Exception) { erro = e.message }
-                carregando = false
-            }
-        }
+    var filmes by remember {
+        mutableStateOf<List<Filme>>(emptyList())
+    }
 
-        LaunchedEffect(Unit) { atualizar() }
+    var carregando by remember {
+        mutableStateOf(false)
+    }
 
-        when (telaAtual) {
-            Tela.LISTA -> TelaLista(
-                roupas = roupas,
-                carregando = carregando,
-                erro = erro,
-                onAtualizar = { atualizar() },
-                onAdicionar = { telaAtual = Tela.ADICIONAR }
-            )
-            Tela.ADICIONAR -> TelaAdicionar(
-                onVoltar = { telaAtual = Tela.LISTA },
-                onRoupaCriada = {
-                    telaAtual = Tela.LISTA
-                    atualizar()
-                }
-            )
+    val scope = rememberCoroutineScope()
+
+    var nome by remember { mutableStateOf("") }
+    var ano by remember { mutableStateOf("") }
+    var genero by remember { mutableStateOf("") }
+    var duracao by remember { mutableStateOf("") }
+
+    fun carregarFilmes() {
+
+        scope.launch {
+
+            carregando = true
+
+            filmes = ApiClient.getFilmes()
+
+            carregando = false
         }
     }
-}
 
-// ── Tela de Lista ─────────────────────────────────────────────────────────────
-@Composable
-fun TelaLista(
-    roupas: List<Roupa>,
-    carregando: Boolean,
-    erro: String?,
-    onAtualizar: () -> Unit,
-    onAdicionar: () -> Unit
-) {
-    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+    fun cadastrarFilme() {
+
+        scope.launch {
+
+            ApiClient.createFilme(
+                Filme(
+                    nome = nome,
+                    ano = ano,
+                    genero = genero,
+                    duracao = duracao
+                )
+            )
+
+            nome = ""
+            ano = ""
+            genero = ""
+            duracao = ""
+
+            carregarFilmes()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        carregarFilmes()
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Fundo
+    ) {
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 20.dp)
+                .padding(20.dp)
         ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+
+            Text(
+                text = "Catálogo de Filmes",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Azul
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            OutlinedTextField(
+                value = nome,
+                onValueChange = { nome = it },
+                label = { Text("Nome do filme") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = ano,
+                onValueChange = { ano = it },
+                label = { Text("Ano") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = genero,
+                onValueChange = { genero = it },
+                label = { Text("Gênero") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = duracao,
+                onValueChange = { duracao = it },
+                label = { Text("Duração") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { cadastrarFilme() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Azul
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column {
-                    Text("👗 Guarda-Roupa", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-                    Text("Suas peças cadastradas.", fontSize = 14.sp, color = Secundario)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = onAtualizar,
-                        shape = RoundedCornerShape(6.dp),
-                        border = BorderStroke(1.dp, Borda)
-                    ) { Text("↻", fontSize = 16.sp, color = Color.Black) }
-                    Button(
-                        onClick = onAdicionar,
-                        shape = RoundedCornerShape(6.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Black,
-                            contentColor = Color.White
-                        )
-                    ) { Text("+ Peça", fontSize = 13.sp) }
-                }
+                Text("Cadastrar Filme")
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Borda)
+            Spacer(modifier = Modifier.height(24.dp))
 
-            when {
-                carregando -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp,
-                            color = Secundario
-                        )
-                    }
+            if (carregando) {
+
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Azul)
                 }
-                erro != null -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Erro de conexão", fontWeight = FontWeight.Medium)
-                            Spacer(Modifier.height(4.dp))
-                            Text(erro, fontSize = 13.sp, color = Secundario)
-                            Spacer(Modifier.height(12.dp))
-                            OutlinedButton(
-                                onClick = onAtualizar,
-                                shape = RoundedCornerShape(6.dp),
-                                border = BorderStroke(1.dp, Borda)
-                            ) { Text("Tentar novamente", fontSize = 13.sp, color = Color.Black) }
-                        }
-                    }
-                }
-                roupas.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nenhuma peça cadastrada ainda.", color = Secundario, fontSize = 14.sp)
-                    }
-                }
-                else -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(roupas) { roupa ->
-                            OutlinedCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, Borda),
-                                colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+
+            } else {
+
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+
+                    items(filmes) { filme ->
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color.White)
+                                    .padding(16.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(14.dp).fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        tipoParaEmoji(roupa.tipo),
-                                        fontSize = 28.sp,
-                                        modifier = Modifier.padding(end = 12.dp)
-                                    )
-                                    Column {
-                                        Text(roupa.nome, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                                        Text(
-                                            "${roupa.tipo} · ${roupa.cor} · Tam. ${roupa.tamanho}",
-                                            fontSize = 12.sp,
-                                            color = Secundario
-                                        )
-                                    }
-                                }
+
+                                Text(
+                                    text = filme.nome,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                )
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Text(
+                                    text = "Ano: ${filme.ano}",
+                                    color = Cinza
+                                )
+
+                                Text(
+                                    text = "Gênero: ${filme.genero}",
+                                    color = Cinza
+                                )
+
+                                Text(
+                                    text = "Duração: ${filme.duracao}",
+                                    color = Cinza
+                                )
                             }
                         }
                     }
@@ -171,15 +202,4 @@ fun TelaLista(
             }
         }
     }
-}
-
-fun tipoParaEmoji(tipo: String): String = when (tipo.lowercase()) {
-    "camiseta", "camisa", "blusa" -> "👕"
-    "calça", "calca", "short", "bermuda" -> "👖"
-    "tênis", "tenis", "sapato", "sandália", "bota" -> "👟"
-    "vestido", "saia" -> "👗"
-    "jaqueta", "casaco", "moletom" -> "🧥"
-    "meias" -> "🧦"
-    "boné", "chapéu" -> "🧢"
-    else -> "🛍️"
 }

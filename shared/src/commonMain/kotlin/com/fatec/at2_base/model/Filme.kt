@@ -3,9 +3,10 @@ package com.fatec.at2_base.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Clothes(
-    val id: Int,
+data class Filme(
+    val id: Int = 0,
     val nome: String,
-    val tipo: String? = null,
-    val cor: String? = null,
+    val ano: String,
+    val genero: String,
+    val duracao: String
 )
