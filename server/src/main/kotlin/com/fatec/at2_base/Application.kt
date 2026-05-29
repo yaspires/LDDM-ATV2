@@ -25,6 +25,11 @@ fun Application.module() {
 
     routing {
 
+        get("/"){
+           call.respond("/filmes para listar os filmes disponiveis!")
+
+        }
+
         get("/filmes") {
 
             val json = filmes.joinToString(

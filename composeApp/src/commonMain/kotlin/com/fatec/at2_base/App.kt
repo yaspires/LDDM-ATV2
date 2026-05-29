@@ -87,6 +87,8 @@ fun App() {
                 .padding(20.dp)
         ) {
 
+            Spacer(modifier = Modifier.height(50.dp))
+
             Text(
                 text = "Catálogo de Filmes",
                 fontSize = 28.sp,
